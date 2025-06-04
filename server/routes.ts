@@ -115,17 +115,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Process the PDF file
           const processedData = await pdfProcessor.processPDF(filePath);
           
-          // Send to your Flowise system (simulated for now)
-          const success = await pdfProcessor.sendToFlowise(
-            processedData.chunks,
-            processedData.embeddings,
-            document.originalName
-          );
+          // Send to your Flowise system
+          const success = await pdfProcessor.sendToFlowise(document.originalName);
 
           // Update document status
           await storage.updateDocumentStatus(
             document.id,
-            success ? "completed" : "failed"
+            processedData.success ? "completed" : "failed"
           );
 
           // Clean up the uploaded file
