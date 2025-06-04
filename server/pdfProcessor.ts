@@ -47,11 +47,14 @@ export class PDFProcessor {
         contentType: 'application/pdf'
       });
 
-      // Try uploading to Flowise file endpoint first
+      // Try uploading to Flowise file endpoint with authentication
       const uploadResponse = await fetch("https://cloud.flowiseai.com/api/v1/openai-assistants-file", {
         method: "POST",
         body: formData as any,
-        headers: formData.getHeaders()
+        headers: {
+          ...formData.getHeaders(),
+          'Authorization': `Bearer ${process.env.FLOWISE_API_KEY}`
+        }
       });
 
       if (uploadResponse.ok) {
@@ -60,21 +63,38 @@ export class PDFProcessor {
         return true;
       }
 
-      // If direct upload fails, try through the chatflow prediction endpoint
-      console.log(`Trying chatflow integration for ${filename}...`);
+      // Try the document upload endpoint specifically for your chatflow
+      console.log(`Attempting document upload to chatflow for ${filename}...`);
+      
+      // Try uploading via the chatflow's document upload endpoint
+      const documentUploadResponse = await fetch(`https://cloud.flowiseai.com/api/v1/vector/upsert/4dae3805-7563-48ff-82d8-bf4f866ac51f`, {
+        method: "POST",
+        body: formData as any,
+        headers: {
+          ...formData.getHeaders(),
+          'Authorization': `Bearer ${process.env.FLOWISE_API_KEY}`
+        }
+      });
+
+      if (documentUploadResponse.ok) {
+        const uploadResult = await documentUploadResponse.json();
+        console.log(`Successfully uploaded document to vector store:`, uploadResult);
+        return true;
+      }
+
+      // Alternative: Try using overrideConfig to process the document
+      console.log(`Trying chatflow with overrideConfig for ${filename}...`);
       const chatflowResponse = await fetch("https://cloud.flowiseai.com/api/v1/prediction/4dae3805-7563-48ff-82d8-bf4f866ac51f", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.FLOWISE_API_KEY}`
         },
         body: JSON.stringify({
-          question: `Process this new PDF document: ${filename}`,
-          uploads: [{
-            data: `data:application/pdf;base64,${base64Data}`,
-            type: 'file',
-            name: filename,
-            mime: 'application/pdf'
-          }]
+          question: `What can you tell me about this document?`,
+          overrideConfig: {
+            fileUpload: base64Data
+          }
         })
       });
 
