@@ -1,8 +1,26 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertMessageSchema, type FlowiseRequest, type FlowiseResponse } from "@shared/schema";
+import { insertMessageSchema, insertDocumentSchema, type FlowiseRequest, type FlowiseResponse } from "@shared/schema";
 import { z } from "zod";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+// Configure multer for file uploads
+const upload = multer({
+  dest: "uploads/",
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === "application/pdf") {
+      cb(null, true);
+    } else {
+      cb(new Error("Only PDF files are allowed"));
+    }
+  },
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Get all messages
@@ -12,6 +30,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(messages);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch messages" });
+    }
+  });
+
+  // Get all documents
+  app.get("/api/documents", async (req, res) => {
+    try {
+      const documents = await storage.getDocuments();
+      res.json(documents);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch documents" });
     }
   });
 
@@ -59,6 +87,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error processing message:", error);
       res.status(500).json({ 
         error: error instanceof Error ? error.message : "Failed to process message" 
+      });
+    }
+  });
+
+  // Upload PDF endpoint
+  app.post("/api/upload", upload.single("pdf"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No PDF file uploaded" });
+      }
+
+      // Save document metadata to database
+      const document = await storage.createDocument({
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        fileSize: req.file.size.toString(),
+        status: "processing"
+      });
+
+      // For now, we'll just save the file info to database
+      // In a production system, you would integrate with your Flowise API
+      // to process the PDF and add it to the vector database
+      
+      res.json({
+        success: true,
+        document,
+        message: "PDF uploaded successfully. Processing will be implemented with Flowise integration."
+      });
+    } catch (error) {
+      console.error("Error uploading PDF:", error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : "Failed to upload PDF" 
       });
     }
   });
