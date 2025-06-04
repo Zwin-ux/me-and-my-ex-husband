@@ -6,6 +6,7 @@ import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { pdfProcessor } from "./pdfProcessor";
 
 // Configure multer for file uploads
 const upload = multer({
@@ -106,14 +107,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "processing"
       });
 
-      // For now, we'll just save the file info to database
-      // In a production system, you would integrate with your Flowise API
-      // to process the PDF and add it to the vector database
+      // Process PDF in the background
+      setTimeout(async () => {
+        try {
+          const filePath = path.join("uploads", req.file!.filename);
+          
+          // Process the PDF file
+          const processedData = await pdfProcessor.processPDF(filePath);
+          
+          // Send to your Flowise system (simulated for now)
+          const success = await pdfProcessor.sendToFlowise(
+            processedData.chunks,
+            processedData.embeddings,
+            document.originalName
+          );
+
+          // Update document status
+          await storage.updateDocumentStatus(
+            document.id,
+            success ? "completed" : "failed"
+          );
+
+          // Clean up the uploaded file
+          await pdfProcessor.cleanupFile(filePath);
+        } catch (error) {
+          console.error("Error processing PDF:", error);
+          await storage.updateDocumentStatus(document.id, "failed");
+        }
+      }, 1000);
       
       res.json({
         success: true,
         document,
-        message: "PDF uploaded successfully. Processing will be implemented with Flowise integration."
+        message: "PDF uploaded successfully. Processing started in background."
       });
     } catch (error) {
       console.error("Error uploading PDF:", error);

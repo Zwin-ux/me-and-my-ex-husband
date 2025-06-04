@@ -13,7 +13,8 @@ export default function Upload() {
   const { toast } = useToast();
 
   const { data: documents = [], isLoading } = useQuery<Document[]>({
-    queryKey: ["/api/documents"]
+    queryKey: ["/api/documents"],
+    refetchInterval: 2000, // Refresh every 2 seconds to show status updates
   });
 
   const uploadMutation = useMutation({

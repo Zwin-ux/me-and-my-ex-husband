@@ -1,12 +1,13 @@
 import { messages, documents, type Message, type InsertMessage, type Document, type InsertDocument } from "@shared/schema";
 import { db } from "./db";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 export interface IStorage {
   getMessages(): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
   getDocuments(): Promise<Document[]>;
   createDocument(document: InsertDocument): Promise<Document>;
+  updateDocumentStatus(id: number, status: string): Promise<Document>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -32,6 +33,15 @@ export class DatabaseStorage implements IStorage {
     const [document] = await db
       .insert(documents)
       .values(insertDocument)
+      .returning();
+    return document;
+  }
+
+  async updateDocumentStatus(id: number, status: string): Promise<Document> {
+    const [document] = await db
+      .update(documents)
+      .set({ status })
+      .where(eq(documents.id, id))
       .returning();
     return document;
   }
