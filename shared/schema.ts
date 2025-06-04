@@ -46,3 +46,9 @@ export interface FlowiseResponse {
   chatId?: string;
   sourceDocuments?: any[];
 }
+
+export interface FlowiseDocumentRequest {
+  overrideConfig?: {
+    fileUpload?: string;
+  };
+}

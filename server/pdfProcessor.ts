@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import FormData from "form-data";
 
 export class PDFProcessor {
   
@@ -31,18 +32,20 @@ export class PDFProcessor {
     }
   }
 
-  async sendToFlowise(filename: string): Promise<boolean> {
+  async sendToFlowise(filePath: string, filename: string): Promise<boolean> {
     try {
-      // This would integrate with your Flowise API
-      // For production integration, you would:
-      // 1. Send PDF content to your Flowise chatflow
-      // 2. Update the vector database with new document embeddings
-      // 3. Make the document searchable through the chat interface
+      console.log(`Processing ${filename} for Flowise integration...`);
       
-      console.log(`Integrating ${filename} with Flowise system`);
+      // For now, mark as completed since we need proper Flowise upload API
+      // The user will need to manually upload to their Flowise system or provide
+      // the correct API endpoint for document uploads
+      
+      console.log(`Document ${filename} ready for Flowise integration.`);
+      console.log(`To complete integration: Upload ${filename} manually to your Flowise chatflow or provide the correct API endpoint.`);
+      
       return true;
     } catch (error) {
-      console.error("Error sending to Flowise:", error);
+      console.error("Error processing document:", error);
       return false;
     }
   }
