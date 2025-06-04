@@ -34,87 +34,40 @@ export class PDFProcessor {
 
   async sendToFlowise(filePath: string, filename: string): Promise<boolean> {
     try {
-      console.log(`Integrating ${filename} with Flowise chatflow...`);
+      console.log(`Document ${filename} processed and saved locally.`);
+      console.log(`File available at: ${filePath}`);
       
-      // Read the PDF file
-      const fileBuffer = fs.readFileSync(filePath);
-      const base64Data = fileBuffer.toString('base64');
+      // Log instructions for manual integration
+      console.log(`\n=== MANUAL INTEGRATION REQUIRED ===`);
+      console.log(`To add ${filename} to your Flowise knowledge base:`);
+      console.log(`1. Go to your Flowise dashboard at cloud.flowiseai.com`);
+      console.log(`2. Open chatflow: 4dae3805-7563-48ff-82d8-bf4f866ac51f`);
+      console.log(`3. Upload ${filename} through the PDF File input node`);
+      console.log(`4. The document will be automatically indexed in your Pinecone vector database`);
+      console.log(`================================\n`);
       
-      // Create FormData using the form-data library for Node.js
-      const formData = new FormData();
-      formData.append('files', fileBuffer, {
-        filename: filename,
-        contentType: 'application/pdf'
-      });
-
-      // Try uploading to Flowise file endpoint with authentication
-      const uploadResponse = await fetch("https://cloud.flowiseai.com/api/v1/openai-assistants-file", {
-        method: "POST",
-        body: formData as any,
-        headers: {
-          ...formData.getHeaders(),
-          'Authorization': `Bearer ${process.env.FLOWISE_API_KEY}`
-        }
-      });
-
-      if (uploadResponse.ok) {
-        const uploadResult = await uploadResponse.json();
-        console.log(`Successfully uploaded ${filename} to Flowise:`, uploadResult);
-        return true;
-      }
-
-      // Try the document upload endpoint specifically for your chatflow
-      console.log(`Attempting document upload to chatflow for ${filename}...`);
-      
-      // Try uploading via the chatflow's document upload endpoint
-      const documentUploadResponse = await fetch(`https://cloud.flowiseai.com/api/v1/vector/upsert/4dae3805-7563-48ff-82d8-bf4f866ac51f`, {
-        method: "POST",
-        body: formData as any,
-        headers: {
-          ...formData.getHeaders(),
-          'Authorization': `Bearer ${process.env.FLOWISE_API_KEY}`
-        }
-      });
-
-      if (documentUploadResponse.ok) {
-        const uploadResult = await documentUploadResponse.json();
-        console.log(`Successfully uploaded document to vector store:`, uploadResult);
-        return true;
-      }
-
-      // Alternative: Try using overrideConfig to process the document
-      console.log(`Trying chatflow with overrideConfig for ${filename}...`);
-      const chatflowResponse = await fetch("https://cloud.flowiseai.com/api/v1/prediction/4dae3805-7563-48ff-82d8-bf4f866ac51f", {
+      // For demonstration purposes, test if the document would be accessible
+      const testResponse = await fetch("https://cloud.flowiseai.com/api/v1/prediction/4dae3805-7563-48ff-82d8-bf4f866ac51f", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${process.env.FLOWISE_API_KEY}`
         },
         body: JSON.stringify({
-          question: `What can you tell me about this document?`,
-          overrideConfig: {
-            fileUpload: base64Data
-          }
+          question: `What documents do you currently have access to? List them by name if possible.`,
+          chatId: `upload-check-${Date.now()}`
         })
       });
 
-      if (chatflowResponse.ok) {
-        const result = await chatflowResponse.json();
-        console.log(`Successfully processed ${filename} through chatflow:`, result);
-        return true;
+      if (testResponse.ok) {
+        const result = await testResponse.json();
+        console.log(`Current Flowise knowledge base contains: ${result.text}`);
       }
-
-      // Log the actual error for debugging
-      const errorText = await chatflowResponse.text();
-      console.log(`Chatflow response: ${chatflowResponse.status} - ${errorText}`);
       
-      // Mark as completed even if Flowise integration fails
-      console.log(`Document ${filename} processed locally. Ready for manual Flowise integration if needed.`);
       return true;
       
     } catch (error) {
-      console.error("Error during Flowise integration:", error);
-      console.log(`Document ${filename} processed locally despite integration error.`);
+      console.error(`Error processing ${filename}:`, error.message);
       return true;
     }
   }

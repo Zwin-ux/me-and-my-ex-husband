@@ -133,8 +133,18 @@ export default function Upload() {
             <CardHeader>
               <CardTitle>Upload New PDF</CardTitle>
               <CardDescription>
-                Upload PDF documents to add them to your AI knowledge base for querying
+                Upload PDF documents to process and prepare for AI knowledge base integration
               </CardDescription>
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h4 className="font-medium text-blue-900">Integration Steps:</h4>
+                <ol className="mt-2 text-sm text-blue-800 space-y-1">
+                  <li>1. Upload PDF here to process and validate</li>
+                  <li>2. Go to your Flowise dashboard at cloud.flowiseai.com</li>
+                  <li>3. Open your chatflow and upload the PDF through the PDF File input node</li>
+                  <li>4. The document will be indexed in your Pinecone vector database</li>
+                  <li>5. Return to Chat page to query the new document</li>
+                </ol>
+              </div>
             </CardHeader>
             <CardContent>
               <div
